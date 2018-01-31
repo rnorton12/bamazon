@@ -77,9 +77,9 @@ updateProductSales = function (id, sales) {
 }
 
 // Customer and Manager function
-updateQuantity = function (id, quantity, price, sales) {
+updateQuantity = function (id, newQuantity, purchaseQuantity, price, sales) {
     var query = connection.query("UPDATE products SET ? WHERE ?", [{
-        stock_quantity: quantity
+        stock_quantity: newQuantity
     }, {
         item_id: id
     }], function (err, res) {
@@ -88,9 +88,9 @@ updateQuantity = function (id, quantity, price, sales) {
         } else {
             if (userObject.role === userRoles[0]) { // customer
                 //console.log(res);
-                var totalPrice = quantity * price;
+                var totalPrice = purchaseQuantity * price;
                 var totalSales = Number(sales) + Number(totalPrice);
-                console.log(quantity, price, sales, totalPrice, totalSales);
+                //console.log("3", newQuantity, purchaseQuantity, price, sales, totalPrice, totalSales);
                 console.log(chalk.yellow("\nYour order has been placed!"));
                 console.log(chalk.yellow("Total order price: " + totalPrice.toFixed(2)));
                 console.log(chalk.yellow("Thanks for shopping with us today.  Please come again."));
@@ -106,10 +106,11 @@ updateQuantity = function (id, quantity, price, sales) {
 
 // Customer function
 validateQuantity = function (id, stockQuantity, desiredQuantity, price, sales) {
-    //console.log(stockQuantity, desiredQuantity, price, sales);
+    //console.log("2",stockQuantity, desiredQuantity, price, sales);
     if (stockQuantity > 0) {
         if (desiredQuantity <= stockQuantity && desiredQuantity > 0) {
-            updateQuantity(id, (stockQuantity - desiredQuantity), price, sales);
+            var newQuantity = stockQuantity - desiredQuantity;
+            updateQuantity(id, newQuantity, desiredQuantity, price, sales);
         } else {
             console.log(chalk.red("Quantity selected does not exist"));
             var question = [{
@@ -158,7 +159,7 @@ validateProduct = function (id, quantity) {
                     var desiredQuantity = quantity;
                     var price = parseFloat(res[0].price);
                     var sales = parseFloat(res[0].product_sales);
-                    //console.log(stockQuantity, desiredQuantity, price, sales);
+                    //console.log("1",stockQuantity, desiredQuantity, price, sales);
                     validateQuantity(id, stockQuantity, desiredQuantity, price, sales);
                 } else { // manager
                     var newQuantity = Number(stockQuantity) + Number(quantity);

@@ -73,3 +73,6 @@ SELECT * FROM departments;
 -- ### Alternative way to insert more than one row
 -- INSERT INTO products (flavor, price, quantity)
 -- VALUES ("vanilla", 2.50, 100), ("chocolate", 3.10, 120), ("strawberry", 3.25, 75);
+SELECT departments.department_id, departments.department_name, departments.over_head_costs, SUM(products.product_sales) AS product_sales, SUM(products.product_sales) - departments.over_head_costs AS total_profit FROM products INNER JOIN departments ON products.department_name = departments.department_name GROUP BY department_name ORDER BY department_id;
+
+SELECT * FROM departments;
