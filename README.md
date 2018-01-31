@@ -34,7 +34,7 @@ To run the Manager part of the app, enter `node bamazonManager.js` at the bash t
    * The stock quantity for the product purchased is reduced by the amount of the purchase quantity.
    * The customer is shown the total order price for their purchase. 
 
-   ![Customer Demo](https://github.com/rnorton12/bamazon/images.test.gif)
+   ![Customer Demo](https://rnorton12.github.io/bamazon/images/test.gif)
  
 ### Manager Overview
    
