@@ -15,19 +15,19 @@ CREATE TABLE products (
 );
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("Mens Pants", "Clothing", 25.50, 10, 0);
+VALUES ("Mens Pants", "Clothing", 25.50, 5, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("Mens Socks (pair)", "Clothing", 2.75, 30, 0);
+VALUES ("Mens Socks (pair)", "Clothing", 2.75, 4, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("Mens Shoes", "Foot Wear", 33.10, 6, 0);
+VALUES ("Mens Shoes", "Foot Wear", 33.10, 3, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
 VALUES ("Mens Boots", "Foot Wear", 55.75, 10, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("AA Batteries", "Electronics", 3.15, 25, 0);
+VALUES ("AA Batteries", "Electronics", 3.15, 0, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
 VALUES ("AAA Batteries", "Electronics", 3.75, 20, 0);
@@ -39,10 +39,10 @@ INSERT INTO products (product_name, department_name, price, stock_quantity, prod
 VALUES ("Toothpaste", "Hygiene", 4.30, 15, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("Shampoo", "Bath", 4.50, 4, 0);
+VALUES ("Shampoo", "Bath", 4.50, 20, 0);
 
 INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales)
-VALUES ("Conditioner", "Bath", 5.25, 5, 0);
+VALUES ("Conditioner", "Bath", 5.25, 20, 0);
 
 SELECT * FROM products;
 
@@ -54,25 +54,25 @@ CREATE TABLE departments (
 );
 
 INSERT INTO departments (department_name, over_head_costs)
-VALUES ("Clothing", 2000.0);
+VALUES ("Clothing", 200.0);
 
 INSERT INTO departments (department_name, over_head_costs)
-VALUES ("Foot Wear", 1500.0);
+VALUES ("Foot Wear", 150.0);
 
 INSERT INTO departments (department_name, over_head_costs)
-VALUES ("Electronics", 900.0);
+VALUES ("Electronics", 90.0);
 
 INSERT INTO departments (department_name, over_head_costs)
-VALUES ("Hygiene", 1000.0);
+VALUES ("Hygiene", 75.0);
 
 INSERT INTO departments (department_name, over_head_costs)
-VALUES ("Bath", 300.0);
+VALUES ("Bath", 60.0);
 
 SELECT * FROM departments;
 
 -- ### Alternative way to insert more than one row
 -- INSERT INTO products (flavor, price, quantity)
 -- VALUES ("vanilla", 2.50, 100), ("chocolate", 3.10, 120), ("strawberry", 3.25, 75);
-SELECT departments.department_id, departments.department_name, departments.over_head_costs, SUM(products.product_sales) AS product_sales, SUM(products.product_sales) - departments.over_head_costs AS total_profit FROM products INNER JOIN departments ON products.department_name = departments.department_name GROUP BY department_name ORDER BY department_id;
+-- SELECT departments.department_id, departments.department_name, departments.over_head_costs, SUM(products.product_sales) AS product_sales, SUM(products.product_sales) - departments.over_head_costs AS total_profit FROM products INNER JOIN departments ON products.department_name = departments.department_name GROUP BY department_name ORDER BY department_id;
 
 SELECT * FROM departments;

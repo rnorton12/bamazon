@@ -140,6 +140,30 @@ validateQuantity = function (id, stockQuantity, desiredQuantity, price, sales) {
         }
     } else {
         console.log(chalk.red("Sorry. This item is out-of-stock"));
+        var question = [{
+            type: 'list',
+            name: 'yes_no',
+            message: 'Continue?',
+            choices: ['Yes', 'No'],
+            filter: function (val) {
+                return val.toLowerCase();
+            },
+            validate: function (val) {
+                if (val === "yes" || val === "y" || val === "no" || val === "n") {
+                    return true;
+                } else {
+                    return "Enter yes (y) or no (n)";
+                }
+            }
+        }];
+        inquirer.prompt(question).then(function (answer) {
+            if (answer.yes_no === "yes" || answer.yes_no === "y") {
+                viewInventory();
+            } else {
+                console.log(chalk.blue("Thanks and visit us again"));
+                connection.end();
+            }
+        });
     }
 }
 
@@ -246,7 +270,7 @@ addToInventory = function () {
     inquirer.prompt(questions).then(function (answer) {
         //console.log(answer.product_id);
         //console.log(answer.quantity);
-        validateProduct(answer.product_id, answer.quantity);
+        validateProduct(parseInt(answer.product_id), parseInt(answer.quantity));
     });
 
 }

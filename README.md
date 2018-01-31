@@ -18,23 +18,21 @@ To run the Manager part of the app, enter `node bamazonManager.js` at the bash t
 
    1. The app begins by displaying the store's inventory.
 
-   <show screen shot>
-
    2. The customer is prompted to enter the ID of the product they would like to buy and how many units of the product they would like to buy.
 
-   <show screen shot>
-
    3. Once the customer has placed the order the following verification occurs:
-   * The product ID is verified to exist.  If not, the app informs the customer that the product ID selected does not exist in the store's inventory.
-   * The stock quantity is verified to meet the customer's purchase quantity request. If not, the app informs the customer that the purchase quantity requested can't be fulfilled. 
-   
-   <show screen shot>
 
+     * The product ID is verified to exist.  If not, the app informs the customer that the product ID selected does not exist in the store's inventory.
+
+     * The stock quantity is verified to meet the customer's purchase quantity request. If not, the app informs the customer that the purchase quantity requested can't be fulfilled. 
+   
    4. After satisfying the above verifications, the purchase is fulfilled and the actions occur:
+
    * The stock quantity for the product purchased is reduced by the amount of the purchase quantity.
+
    * The customer is shown the total order price for their purchase. 
 
-   ![Customer Demo](https://rnorton12.github.io/bamazon/images/test.gif)
+   ![Customer Demo](https://rnorton12.github.io/bamazon/images/customer_demo.gif)
  
 ### Manager Overview
    
