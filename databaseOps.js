@@ -13,48 +13,71 @@ var connection = mysql.createConnection({
     database: "bamazon"
 });
 
+var userObject = undefined; // will store this
+
+// constructor
 var User = function (userRole) {
     this.role = userRole;
 }
 
 User.prototype.printUserRole = function () {
-    console.log(this.role);
+    console.log(chalk.magentaBright.bold(this.role));
 }
 User.prototype.run = function () {
-    var myObject = this;
-    var role = myObject.role;
+    userObject = this;
+    var role = userObject.role;
     connection.connect(function (err) {
         if (err) {
             console.log(err);
         } else {
-            console.log("connected as id " + connection.threadId + "\n");
-            console.log("role: " + role);
+            //console.log("connected as id " + connection.threadId + "\n");
+            //console.log("role: " + role);
             if (role === userRoles[0]) { // customer
-                viewInventory(myObject);
-            } else if (role == userRoles[1]) {
-                askManager(myObject);
-            } else {
-                console.log("Under Construction");
+                viewInventory();
+            } else if (role == userRoles[1]) { // manager
+                askManager();
+            } else { // supervisor
+                askSuperVisor();
             }
         }
     });
 }
 
-viewInventory = function (myObject) {
-    connection.query("SELECT * FROM products", function (err, res) {
+// Customer and Manager function
+viewInventory = function () {
+    var queryStr = "SELECT * FROM products";
+    connection.query(queryStr, function (err, res) {
         if (err) throw err;
         //console.log(res);
-        makeTable(res);
-        if (myObject.role === userRoles[0]) { // customer
-            askCustomer(myObject);
-        } else if (myObject.role === userRoles[1]) { // manager
-            askManager(myObject);
-        } else {
-            console.log("Under Construction");
+        if (userObject.role === userRoles[0]) { // customer
+            makeTable(res, "Products Available to Purchase:");
+            askCustomer();
+        } else { // manager
+            makeTable(res, "Available Inventory:")
+            askManager();
         }
     });
 }　
-updateQuantity = function (myObject, id, quantity, price) {
+
+// Customer function
+updateProductSales = function (id, sales) {
+    var query = connection.query("UPDATE products SET ? WHERE ?", [{
+        product_sales: sales
+    }, {
+        item_id: id
+    }], function (err, res) {
+        if (err) {
+            console.log(err);
+        } else {
+            //console.log(res);
+            console.log("\nProduct Sales Updated\n");
+            connection.end();
+        }
+    });
+}
+
+// Customer and Manager function
+updateQuantity = function (id, quantity, price, sales) {
     var query = connection.query("UPDATE products SET ? WHERE ?", [{
         stock_quantity: quantity
     }, {
@@ -63,42 +86,65 @@ updateQuantity = function (myObject, id, quantity, price) {
         if (err) {
             console.log(err);
         } else {
-            if (myObject.role === userRoles[0]) {
+            if (userObject.role === userRoles[0]) { // customer
                 //console.log(res);
-                console.log("Your order has been placed");
-                console.log("Total order price: " + (quantity * price));
-                console.log("Thanks for shopping with us today.  Please come again.");
-                connection.end();
-            } else {
+                var totalPrice = quantity * price;
+                var totalSales = Number(sales) + Number(totalPrice);
+                console.log(quantity, price, sales, totalPrice, totalSales);
+                console.log(chalk.yellow("\nYour order has been placed!"));
+                console.log(chalk.yellow("Total order price: " + totalPrice.toFixed(2)));
+                console.log(chalk.yellow("Thanks for shopping with us today.  Please come again."));
+                updateProductSales(id, totalSales);
+            } else { // manager
                 //console.log(res);
-                console.log("Quantity Updated");
-                askManager(myObject);
+                console.log("\nQuantity Updated\n");
+                askManager();
             }
         }
     });
 }
 
-　
-validateQuantity = function (myObject, id, stockQuantity, desiredQuantity, price) {
+// Customer function
+validateQuantity = function (id, stockQuantity, desiredQuantity, price, sales) {
+    //console.log(stockQuantity, desiredQuantity, price, sales);
     if (stockQuantity > 0) {
         if (desiredQuantity <= stockQuantity && desiredQuantity > 0) {
-            updateQuantity(myObject, id, (stockQuantity - desiredQuantity), price);
+            updateQuantity(id, (stockQuantity - desiredQuantity), price, sales);
         } else {
-            console.log(chalk.yellow("quantity selected does not exist"));
-            if (onError()) {
-                viewInventory(myObject);
-            } else {
-                console.log(chalk.blue("Thanks and visit us again"));
-                connection.end();
-            }
+            console.log(chalk.red("Quantity selected does not exist"));
+            var question = [{
+                type: 'list',
+                name: 'yes_no',
+                message: 'Continue?',
+                choices: ['Yes', 'No'],
+                filter: function (val) {
+                    return val.toLowerCase();
+                },
+                validate: function (val) {
+                    if (val === "yes" || val === "y" || val === "no" || val === "n") {
+                        return true;
+                    } else {
+                        return "Enter yes (y) or no (n)";
+                    }
+                }
+            }];
+            inquirer.prompt(question).then(function (answer) {
+                if (answer.yes_no === "yes" || answer.yes_no === "y") {
+                    viewInventory();
+                } else {
+                    console.log(chalk.blue("Thanks and visit us again"));
+                    connection.end();
+                }
+            });
         }
     } else {
-        console.log("This item is out-of-stock");
+        console.log(chalk.red("Sorry. This item is out-of-stock"));
     }
 }
 
-validateProduct = function (myObject, id, quantity) {
-    console.log("id:" + id);
+// Customer and Manager function
+validateProduct = function (id, quantity) {
+    //console.log("id:" + id);
     var query = connection.query("SELECT * FROM products WHERE item_id=?", [id], function (err, res) {
         if (err) {
             console.log(err);
@@ -108,29 +154,48 @@ validateProduct = function (myObject, id, quantity) {
             if (res.length) {
                 var id = parseInt(res[0].item_id);
                 var stockQuantity = parseInt(res[0].stock_quantity);
-
-                if (myObject.role === userRoles[0]) {
-                    var desiredQuantity = parseInt(quantity);
+                if (userObject.role === userRoles[0]) { // customer
+                    var desiredQuantity = quantity;
                     var price = parseFloat(res[0].price);
-                    validateQuantity(myObject, id, stockQuantity, desiredQuantity, price);
-                } else {
-                    var newQuantity = stockQuantity + quantity;
-                    updateQuantity(myObject, id, newQuantity);
+                    var sales = parseFloat(res[0].product_sales);
+                    //console.log(stockQuantity, desiredQuantity, price, sales);
+                    validateQuantity(id, stockQuantity, desiredQuantity, price, sales);
+                } else { // manager
+                    var newQuantity = Number(stockQuantity) + Number(quantity);
+                    updateQuantity(id, newQuantity);
                 }
             } else {
                 console.log(chalk.red("Product Id is invalid."));
-                if (onError()) {
-                    if (thimyObjects.role === userRoles[0]) {
-                        viewInventory(myObject);
+                var question = [{
+                    type: 'list',
+                    name: 'yes_no',
+                    message: 'Continue?',
+                    choices: ['Yes', 'No'],
+                    filter: function (val) {
+                        return val.toLowerCase();
+                    },
+                    validate: function (val) {
+                        if (val === "yes" || val === "y" || val === "no" || val === "n") {
+                            return true;
+                        } else {
+                            return "Enter yes (y) or no (n)";
+                        }
+                    }
+                }];
+                inquirer.prompt(question).then(function (answer) {
+                    if (answer.yes_no === "yes" || answer.yes_no === "y") {
+                        if (userObject.role === userRoles[0]) {
+                            viewInventory();
+                        } else {
+                            addToInventory();
+                        }
                     } else {
-                        addToInventory(myObject);
+                        if (userObject.role === userRoles[0]) {
+                            console.log(chalk.blue("Thanks and visit us again"));
+                        }
+                        connection.end();
                     }
-                } else {
-                    if (myObject.role === userRoles[0]) {
-                        console.log(chalk.blue("Thanks and visit us again"));
-                    }
-                    connection.end();
-                }
+                });
             }
         }
     });
@@ -139,17 +204,18 @@ validateProduct = function (myObject, id, quantity) {
     //console.log(query.sql);
 }
 
-viewLowInventory = function (myObject) {
+// Manager function
+viewLowInventory = function () {
     connection.query("SELECT * FROM products WHERE stock_quantity < 5", function (err, res) {
         if (err) throw err;
         //console.log(res);
-        makeTable(res);
-        askManager(myObject);
+        makeTable(res, "Products with low inventory: ");
+        askManager();
     });
 }
 
-　
-addToInventory = function (myObject) {
+// Manager function
+addToInventory = function () {
     var questions = [{
             type: 'input',
             name: 'product_id',
@@ -177,12 +243,15 @@ addToInventory = function (myObject) {
         }
     ];
     inquirer.prompt(questions).then(function (answer) {
-        validateProduct(myObject, answer.product_id, answer.quantity);
+        //console.log(answer.product_id);
+        //console.log(answer.quantity);
+        validateProduct(answer.product_id, answer.quantity);
     });
 
 }
 
-addNewProduct = function (myObject) {
+// Manager function
+addNewProduct = function () {
     inquirer.prompt([{
             name: "pname",
             message: "Product name?",
@@ -218,71 +287,96 @@ addNewProduct = function (myObject) {
             product_name: answers.pname,
             department_name: answers.dpname,
             price: answers.price,
-            stock_quantity: answers.quantity
+            stock_quantity: answers.quantity,
+            product_sales: 0
         }, function (err, res) {
             if (err) {
                 console.log(err);
             } else {
-                console.log("New product added");
-                askManager(myObject);
+                console.log("\nNew product added\n");
+                askManager();
             }
         });
     });
-
 }
 
-function onError() {
-    var question = [{
-        type: 'list',
-        name: 'yes_no',
-        message: 'Select product and quantity to purchase?',
-        choices: ['Yes', 'No'],
-        filter: function (val) {
-            return val.toLowerCase();
+// Supervisor function
+viewProductSalesByDepartment = function () {
+    var queryStr = "SELECT departments.department_id, departments.department_name, departments.over_head_costs, ";
+    queryStr += "SUM(products.product_sales) AS product_sales, SUM(products.product_sales) - departments.over_head_costs AS total_profit ";
+    queryStr += "FROM products INNER JOIN departments ON products.department_name = departments.department_name ";
+    queryStr += "GROUP BY department_name ";
+    queryStr += "ORDER BY department_id;";
+    
+    connection.query(queryStr, function (err, res) {
+        if (err) throw err;
+        //console.log(res);
+        makeTable(res, "Product Sales by Department:");
+        askSuperVisor();
+    });
+}
+
+// Supervisor function
+addNewDepartment = function () {
+    inquirer.prompt([{
+            name: "dpname",
+            message: "Department name?",
+            validate: function (value) {
+                return value !== '';
+            }
         },
-        validate: function (val) {
-            if (val === "yes" || val === "y" || val === "no" || val === "n") {
-                return true;
-            } else {
-                return "Enter yes (y) or no (n)";
+        {
+            name: "overhead_cost",
+            message: "Overhead Cost?",
+            validate: function (value) {
+                var isValid = !isNaN(parseFloat(value));
+                return isValid || "Overhead cost should be a number!";
             }
         }
-    }];
-    inquirer.prompt(question).then(function (answer) {
-        if (answer.yes_no === "yes" || answer.yes_no === "y") {
-            return true;
-            readProducts();
-        } else {
-            return false;
-            console.log(chalk.blue("Thanks and visit us again"));
-            connection.end();
-        }
+    ]).then(function (answers) {
+        var query = connection.query("INSERT INTO departments SET ?", {
+            department_name: answers.dpname,
+            over_head_costs: answers.overhead_cost
+        }, function (err, res) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("\nNew Department added\n");
+                askSuperVisor();
+            }
+        });
     });
-
 }
-
 　　
-makeTable = function (data) {
+makeTable = function (data, tableHeader) {
     var myTable = new table;
-    if (this.role === userRoles[0]) { // customer
-        console.log(chalk.blue("Products Available to Purchase:"));
-    } else {
-        console.log(chalk.blue("Available Inventory"));
+   
+    console.log(chalk.blue(tableHeader));
+    if (userObject.role === userRoles[0] || userObject.role === userRoles[1]) { // customer and manager
+        data.forEach(function (product) {
+            myTable.cell(chalk.green('Product Id'), product.item_id);
+            myTable.cell(chalk.green('Product Name'), product.product_name);
+            myTable.cell(chalk.green('Department Name'), product.department_name);
+            myTable.cell(chalk.green('Price, USD'), product.price, table.number(2));
+            myTable.cell(chalk.green('Quantity'), product.stock_quantity > 0 ? product.stock_quantity : chalk.red(product.stock_quantity));
+            myTable.cell(chalk.green('Product Sales'), product.product_sales);
+            myTable.newRow();
+        });
+    } else { // supervisor
+        data.forEach(function (department) {
+            myTable.cell(chalk.green('Department Id'), department.department_id);
+            myTable.cell(chalk.green('Department Name'), department.department_name);
+            myTable.cell(chalk.green('Over Head Costs'), department.over_head_costs);
+            myTable.cell(chalk.green('Product Sales, USD'), department.product_sales, table.number(2));
+            myTable.cell(chalk.green('Total Profit, USD'), department.total_profit);
+            myTable.newRow();
+        });
     }
-
-    data.forEach(function (product) {
-        myTable.cell(chalk.green('Product Id'), product.item_id);
-        myTable.cell(chalk.green('Product Name'), product.product_name);
-        myTable.cell(chalk.green('Department Name'), product.department_name);
-        myTable.cell(chalk.green('Price, USD'), product.price, table.number(2));
-        myTable.cell(chalk.green('Quantity'), product.stock_quantity > 0 ? product.stock_quantity : chalk.red(product.stock_quantity));
-        myTable.newRow();
-    })
 
     console.log(myTable.toString())
 }
 
-function askCustomer(myObject) {
+function askCustomer() {
 
     var questions = [{
             type: 'input',
@@ -313,11 +407,11 @@ function askCustomer(myObject) {
 
     inquirer.prompt(questions).then(function (answer) {
         // verify product id is in database
-        validateProduct(myObject, answer.product_id, answer.quantity);
+        validateProduct(answer.product_id, parseInt(answer.quantity));
     });
 }
 
-function askManager(myObject) {
+function askManager() {
     inquirer
         .prompt([{
             type: 'rawlist',
@@ -343,31 +437,66 @@ function askManager(myObject) {
                     name: 'Add New Product',
                     value: '4'
                 },
-                {   
+                {
                     key: '5',
                     name: 'Quit',
-                    value: '5',
-                    filter: function (value) {
-                        return value.toLowerCase();
-                    }
+                    value: '5'
                 }
             ]
         }]).then(function (answer) {
             //console.log(JSON.stringify(answer, null, '  '));
             switch (answer.manager_menu) {
                 case "1":
-                    viewInventory(myObject);
+                    viewInventory();
                     break;
                 case "2":
-                    viewLowInventory(myObject);
+                    viewLowInventory();
                     break;
                 case "3":
-                    addToInventory(myObject);
+                    addToInventory();
                     break;
                 case "4":
-                    addNewProduct(myObject);
+                    addNewProduct();
                     break;
                 case "5":
+                    connection.end();
+                    break;
+            };
+        });
+}
+
+function askSuperVisor() {
+    inquirer
+        .prompt([{
+            type: 'rawlist',
+            name: 'supervisor_menu',
+            message: 'What do you want to do?',
+            choices: [{
+                    key: '1',
+                    name: 'View Product Sales by Department',
+                    value: '1'
+                },
+                {
+                    key: '2',
+                    name: 'Create New Department',
+                    value: '2'
+                },
+                {
+                    key: '3',
+                    name: 'Quit',
+                    value: '3',
+                }
+            ]
+        }]).then(function (answer) {
+            //console.log(JSON.stringify(answer, null, '  '));
+            switch (answer.supervisor_menu) {
+                case "1":
+                    viewProductSalesByDepartment();
+                    break;
+                case "2":
+                    addNewDepartment();
+                    break;
+                case "3":
                     connection.end();
                     break;
             };
