@@ -92,6 +92,6 @@ BAMAZON is a CLI app that represents an Amazon-like storefront utilizing Node.js
 
 ![Supervisor Demo](https://rnorton12.github.io/bamazon/images/supervisor_demo.gif)
 　
-*Author: Roy Norton (C) 2017.*
+*Author: Roy Norton (C) 2018.*
 
 　
