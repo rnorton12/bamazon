@@ -1,8 +1,8 @@
 {
   "name": "bamazon",
   "version": "1.0.0",
-  "description": "",
-  "main": "bamazonCustomer.js",
+  "description": "\\",
+  "main": "databaseOps.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +19,7 @@
   "dependencies": {
     "chalk": "^2.3.0",
     "easy-table": "^1.1.1",
-    "mysql": "^2.15.0",
-    "table": "^4.0.2"
+    "inquirer": "^5.0.1",
+    "mysql": "^2.15.0"
   }
 }

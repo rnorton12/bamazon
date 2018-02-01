@@ -15,7 +15,7 @@ var connection = mysql.createConnection({
 
 var userObject = undefined; // will store this
 
-// constructor
+// begin constructor
 var User = function (userRole) {
     this.role = userRole;
 }
@@ -42,6 +42,9 @@ User.prototype.run = function () {
         }
     });
 }
+// end constructor
+
+// *** Supporting functions
 
 // Customer and Manager function
 viewInventory = function () {
@@ -401,6 +404,7 @@ makeTable = function (data, tableHeader) {
     console.log(myTable.toString())
 }
 
+// Customer function
 function askCustomer() {
 
     var questions = [{
@@ -436,6 +440,7 @@ function askCustomer() {
     });
 }
 
+// Manager function
 function askManager() {
     inquirer
         .prompt([{
@@ -490,6 +495,7 @@ function askManager() {
         });
 }
 
+// Supervisor function
 function askSuperVisor() {
     inquirer
         .prompt([{
